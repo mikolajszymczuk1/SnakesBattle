@@ -1,7 +1,9 @@
 <template>
-  <HelloWorld />
+  <main>
+    <MainGameInstance />
+  </main>
 </template>
 
 <script setup lang="ts">
-import HelloWorld from '@/components/HelloWorld.vue';
+import MainGameInstance from '@/components/MainGameInstance.vue';
 </script>
