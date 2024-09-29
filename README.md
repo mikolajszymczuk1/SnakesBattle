@@ -1,1 +1,1 @@
-# SnakesBattle
+# Snakes Battle Game

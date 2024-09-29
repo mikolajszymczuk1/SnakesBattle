@@ -1,0 +1,3 @@
+# Snakes Battle Service
+
+## Documentation soon ...
