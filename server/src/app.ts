@@ -7,7 +7,7 @@ import exampleRouter from '@/routers/exampleRouter';
 
 /**
  * Create app object
- * @param {} config all config properties for application based on env mode
+ * @param {AppConfig} config all config properties for application based on env mode
  * @returns {Express} express app instance
  */
 export const createApp = (config: AppConfig): Express => {

@@ -10,7 +10,10 @@
 
 <script setup lang="ts">
 import { ref, type Ref, onMounted } from 'vue';
-import GameMain from '@/mod/GameMain.ts';
+import GameMain from '@/mod/GameMain';
+import { useConnectionStore } from '@/stores/connectionStore';
+
+const connectionStore = useConnectionStore();
 
 const gameBoardRef: Ref<HTMLCanvasElement | null> = ref(null);
 const context: Ref<CanvasRenderingContext2D | null> = ref(null);
@@ -35,7 +38,13 @@ const initGame = (): void => {
   game.runGameLoop();
 };
 
+/** Connect player to socket server */
+const connectToServer = (): void => {
+  connectionStore.connect();
+};
+
 onMounted((): void => {
+  connectToServer();
   initGame();
 });
 </script>
