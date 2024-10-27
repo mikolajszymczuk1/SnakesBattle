@@ -7,5 +7,4 @@ export type SnakeData = {
   id: string;
   head: Position;
   tail: Position[];
-  length: number;
 };

@@ -3,6 +3,7 @@ import BaseObject from '@/mod/gameObjects/BaseObject';
 import { useGameStore } from '@/stores/gameStore';
 import { useConnectionStore } from '@/stores/connectionStore';
 import type { SnakeData } from '@/types/commonTypes';
+import { convertDataToBinary } from '@/mod/binary/binaryTools';
 
 class SnakePlayer extends BaseObject {
   private readonly MOVE_DELAY: number = 0.08;
@@ -136,24 +137,21 @@ class SnakePlayer extends BaseObject {
     this.tail.push(snakeTail);
   }
 
+  /** Send all snake data to server (binary) */
   public sendSnakeDataToServer(): void {
     const data: SnakeData = {
       id: this.connectionStore.clientId,
-      head: {
-        x: this.x,
-        y: this.y,
-      },
-      tail: [],
+      head: { x: this.x, y: this.y },
+      tail: this.tail,
     };
-
-    for (const tailElement of this.tail) {
-      data.tail.push({ x: tailElement.x, y: tailElement.y });
-    }
-
-    this.gameStore.sendSnakeData(data);
+    this.gameStore.sendSnakeData(convertDataToBinary(data));
   }
 
-  public updateSnakeData(data: SnakeData) {
+  /**
+   * Update snake data
+   * @param {SnakeData} data snake data
+   */
+  public updateSnakeData(data: SnakeData): void {
     // Update head
     this.x = data.head.x;
     this.y = data.head.y;

@@ -5,6 +5,7 @@ import GameMain from '@/mod/GameMain';
 import SnakePlayer from '@/mod/gameObjects/SnakePlayer';
 import { useConnectionStore } from '@/stores/connectionStore';
 import type { Position, SnakeData } from '@/types/commonTypes';
+import { getSnakeDataFromBinary } from '@/mod/binary/binaryTools';
 
 export const useGameStore = defineStore('gameStore', () => {
   const gameInstance: Ref<GameMain | null> = ref(null);
@@ -42,7 +43,8 @@ export const useGameStore = defineStore('gameStore', () => {
       gameInstance.value?.runGameLoop();
     });
 
-    socket.on('player:updateData', (data: SnakeData): void => {
+    socket.on('player:updateData', (buffer: Buffer): void => {
+      const data = getSnakeDataFromBinary(buffer);
       if (playersMap.has(data.id)) {
         playersMap.get(data.id)!.updateSnakeData(data);
       }
@@ -60,16 +62,16 @@ export const useGameStore = defineStore('gameStore', () => {
       console.log('Game Over !');
     });
 
-    socket.on('game:updateApplePosition', (position: Position): void => {
-      gameInstance.value!.updateApplePosition(position);
+    socket.on('game:updateApplesPositions', (positions: Position[]): void => {
+      gameInstance.value!.updateApplesPosition(positions);
     });
   };
 
   /**
    * Send snake data to server
-   * @param {SnakeData} data Snake data
+   * @param {ArrayBuffer} data Snake data
    */
-  const sendSnakeData = (data: SnakeData): void => {
+  const sendSnakeData = (data: ArrayBuffer): void => {
     socket.emit('player:data', data);
   };
 

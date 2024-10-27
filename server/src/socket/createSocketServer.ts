@@ -1,6 +1,8 @@
 import { Server } from 'socket.io';
 import type { AppConfig } from '@/types/AppConfig';
 import type { Position, SnakeData } from '@/types/commonTypes';
+import { generateApplesPositions } from '@/mod/utils/gameHelpers';
+import { getSnakeDataFromBinary, convertDataToBinary } from '@/mod/utils/binary/binaryTools';
 
 /**
  * Create socket server and all needed logic
@@ -9,14 +11,14 @@ import type { Position, SnakeData } from '@/types/commonTypes';
 export const createSocketServer = (expressServer: any, config: AppConfig) => {
   const io = new Server(expressServer, { cors: { origin: config.api.baseClientUrl } });
   const playersMap: Map<string, SnakeData> = new Map<string, SnakeData>();
-  const applePosition: Position = { x: 35, y: 20 };
+  const applesPosition: Position[] = generateApplesPositions(3);
 
   io.on('connection', (socket): void => {
     console.log(`User connected: ${socket.id}`);
     socket.emit('client:connect', socket.id);
-    playersMap.set(socket.id, { id: socket.id, head: { x: 0, y: 0 }, tail: [], length: 0 });
+    playersMap.set(socket.id, { id: socket.id, head: { x: 0, y: 0 }, tail: [] });
     io.emit('player:updatePlayerList', Array.from(playersMap.entries()));
-    io.emit('game:updateApplePosition', applePosition);
+    io.emit('game:updateApplesPositions', applesPosition);
     socket.emit('player:run');
 
     socket.on('disconnect', (): void => {
@@ -26,14 +28,18 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
       socket.broadcast.emit('player:updatePlayerList', Array.from(playersMap.entries()));
     });
 
-    socket.on('player:data', (data): void => {
+    socket.on('player:data', (buffer: Buffer): void => {
+      const data: SnakeData = getSnakeDataFromBinary(buffer);
+
       // Apple logic
-      if (data.head.x === applePosition.x && data.head.y === applePosition.y) {
-        applePosition.x = Math.floor(Math.random() * 70);
-        applePosition.y = Math.floor(Math.random() * 40);
-        socket.emit('player:grow');
-        io.emit('game:updateApplePosition', applePosition);
-      }
+      applesPosition.forEach((applePosition: Position) => {
+        if (data.head.x === applePosition.x && data.head.y === applePosition.y) {
+          applePosition.x = Math.floor(Math.random() * 70);
+          applePosition.y = Math.floor(Math.random() * 40);
+          socket.emit('player:grow');
+          io.emit('game:updateApplesPositions', applesPosition);
+        }
+      });
 
       // Collisions with own tail
       if (
@@ -65,7 +71,7 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
 
       if (playersMap.has(data.id)) {
         playersMap.set(data.id, data);
-        socket.broadcast.emit('player:updateData', data);
+        socket.broadcast.emit('player:updateData', convertDataToBinary(data));
       }
     });
   });

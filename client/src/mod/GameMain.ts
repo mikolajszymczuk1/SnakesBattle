@@ -12,7 +12,7 @@ class GameMain {
   private lastTime: number;
   private keys: { [key: string]: boolean } = {};
   private readonly gameStore;
-  private readonly apple: Apple;
+  private readonly apples: Apple[] = [];
 
   constructor(
     gameWidth: number,
@@ -27,15 +27,7 @@ class GameMain {
     this.lastTime = 0;
     this.gameStore = useGameStore();
     this.addListeners();
-    this.apple = new Apple(
-      0,
-      0,
-      this.cellSize,
-      this.cellSize,
-      '#ff0000',
-      '#ffffff',
-      ctx,
-    );
+    this.createApples(3);
   }
 
   public setPlayer(player: SnakePlayer) {
@@ -80,10 +72,8 @@ class GameMain {
   /** Render game elements */
   public render(): void {
     this.drawGrid();
-    this.apple.draw();
-    this.gameStore.playersMap.forEach((player) => {
-      player.draw();
-    });
+    this.apples.forEach((apple) => apple.draw());
+    this.gameStore.playersMap.forEach((player) => player.draw());
   }
 
   /**
@@ -101,6 +91,26 @@ class GameMain {
       this.ctx,
     );
     return sp;
+  }
+
+  /**
+   * Create apples objects on client side
+   * @param {number} count count of apples to create
+   */
+  public createApples(count: number = 1): void {
+    for (let i = 0; i < count; i++) {
+      this.apples.push(
+        new Apple(
+          0,
+          0,
+          this.cellSize,
+          this.cellSize,
+          '#ff0000',
+          '#ffffff',
+          this.ctx,
+        ),
+      );
+    }
   }
 
   /** Start game loop */
@@ -128,11 +138,13 @@ class GameMain {
 
   /**
    * Update apple position
-   * @param {number} position new apple position
+   * @param {Position[]} positions new apples positions
    */
-  public updateApplePosition(position: Position): void {
-    this.apple.setX(position.x);
-    this.apple.setY(position.y);
+  public updateApplesPosition(positions: Position[]): void {
+    for (let i = 0; i < positions.length; i++) {
+      this.apples[i].setX(positions[i].x);
+      this.apples[i].setY(positions[i].y);
+    }
   }
 
   public growSnake(): void {
