@@ -8,7 +8,6 @@ import type { Position, SnakeData } from '@/types/commonTypes';
  */
 export const createSocketServer = (expressServer: any, config: AppConfig) => {
   const io = new Server(expressServer, { cors: { origin: config.api.baseClientUrl } });
-
   const playersMap: Map<string, SnakeData> = new Map<string, SnakeData>();
   const applePosition: Position = { x: 35, y: 20 };
 
@@ -24,9 +23,11 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
       console.log(`User disconnected: ${socket.id}`);
       playersMap.delete(socket.id);
       socket.emit('player:removePlayer', socket.id);
+      socket.broadcast.emit('player:updatePlayerList', Array.from(playersMap.entries()));
     });
 
     socket.on('player:data', (data): void => {
+      // Apple logic
       if (data.head.x === applePosition.x && data.head.y === applePosition.y) {
         applePosition.x = Math.floor(Math.random() * 70);
         applePosition.y = Math.floor(Math.random() * 40);
@@ -34,8 +35,38 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
         io.emit('game:updateApplePosition', applePosition);
       }
 
-      playersMap.set(data.id, data);
-      socket.broadcast.emit('player:updateData', data);
+      // Collisions with own tail
+      if (
+        playersMap.has(data.id) &&
+        playersMap
+          .get(data.id)!
+          .tail.some((tailElement) => tailElement.x === data.head.x && tailElement.y === data.head.y)
+      ) {
+        playersMap.delete(data.id);
+        socket.emit('player:gameOver');
+        socket.emit('player:removePlayer', data.id);
+        socket.broadcast.emit('player:updatePlayerList', Array.from(playersMap.entries()));
+        return;
+      }
+
+      // Collision with other players
+      for (const [id, player] of playersMap) {
+        if (
+          id !== data.id &&
+          player.tail.some((tailElement) => tailElement.x === data.head.x && tailElement.y === data.head.y)
+        ) {
+          playersMap.delete(data.id);
+          socket.emit('player:gameOver');
+          socket.emit('player:removePlayer', data.id);
+          socket.broadcast.emit('player:updatePlayerList', Array.from(playersMap.entries()));
+          return;
+        }
+      }
+
+      if (playersMap.has(data.id)) {
+        playersMap.set(data.id, data);
+        socket.broadcast.emit('player:updateData', data);
+      }
     });
   });
 

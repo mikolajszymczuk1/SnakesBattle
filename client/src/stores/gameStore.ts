@@ -56,11 +56,19 @@ export const useGameStore = defineStore('gameStore', () => {
       gameInstance.value!.growSnake();
     });
 
+    socket.on('player:gameOver', (): void => {
+      console.log('Game Over !');
+    });
+
     socket.on('game:updateApplePosition', (position: Position): void => {
       gameInstance.value!.updateApplePosition(position);
     });
   };
 
+  /**
+   * Send snake data to server
+   * @param {SnakeData} data Snake data
+   */
   const sendSnakeData = (data: SnakeData): void => {
     socket.emit('player:data', data);
   };
