@@ -12,7 +12,9 @@
 import { ref, type Ref, onMounted } from 'vue';
 import GameMain from '@/mod/GameMain';
 import { useConnectionStore } from '@/stores/connectionStore';
+import { useGameStore } from '@/stores/gameStore';
 
+const gameStore = useGameStore();
 const connectionStore = useConnectionStore();
 
 const gameBoardRef: Ref<HTMLCanvasElement | null> = ref(null);
@@ -21,21 +23,20 @@ const cellSize: number = 40;
 
 /** Initialize game */
 const initGame = (): void => {
-  gameBoardRef.value.width =
+  gameBoardRef.value!.width =
     cellSize * (Math.floor(window.innerWidth / cellSize) - 1);
-  gameBoardRef.value.height =
+  gameBoardRef.value!.height =
     cellSize * (Math.floor(window.innerHeight / cellSize) - 1);
-  context.value = gameBoardRef.value.getContext('2d');
+  context.value = gameBoardRef.value!.getContext('2d');
 
   const game = new GameMain(
-    gameBoardRef.value.width,
-    gameBoardRef.value.height,
+    gameBoardRef.value!.width,
+    gameBoardRef.value!.height,
     cellSize,
-    context.value,
+    context.value!,
   );
 
-  game.createPlayer();
-  game.runGameLoop();
+  gameStore.gameInstance = game;
 };
 
 /** Connect player to socket server */
@@ -44,8 +45,8 @@ const connectToServer = (): void => {
 };
 
 onMounted((): void => {
-  connectToServer();
   initGame();
+  connectToServer();
 });
 </script>
 

@@ -1,14 +1,21 @@
 import SnakeTail from '@/mod/gameObjects/SnakeTail';
 import BaseObject from '@/mod/gameObjects/BaseObject';
+import { useGameStore } from '@/stores/gameStore';
+import { useConnectionStore } from '@/stores/connectionStore';
+import type { SnakeData } from '@/types/commonTypes';
 
 class SnakePlayer extends BaseObject {
+  private readonly MOVE_DELAY: number = 0.1;
+
   private direction: string;
   private nextDirection: string;
-  private moveDelay: number = 0.08;
   private timeSinceLastMove: number = 0;
 
-  private tail: SnakeTail[] = [];
-  private snakeLength = 50;
+  private readonly tail: SnakeTail[] = [];
+  private snakeLength: number = 5;
+
+  private readonly gameStore;
+  private readonly connectionStore;
 
   constructor(
     x: number,
@@ -16,18 +23,21 @@ class SnakePlayer extends BaseObject {
     width: number,
     height: number,
     color: string,
+    tailColor: string,
     ctx: CanvasRenderingContext2D,
   ) {
-    super(x, y, width, height, color, ctx);
+    super(x, y, width, height, color, tailColor, ctx);
     this.direction = 'right';
     this.nextDirection = 'right';
+    this.gameStore = useGameStore();
+    this.connectionStore = useConnectionStore();
   }
 
   /** Draw object */
   public draw(): void {
     super.draw();
     for (const singleTailElement of this.tail) {
-      singleTailElement.draw();
+      singleTailElement.draw(true);
     }
   }
 
@@ -36,12 +46,13 @@ class SnakePlayer extends BaseObject {
     this.updateDriection(keys);
 
     this.timeSinceLastMove += deltaTime;
-    if (this.timeSinceLastMove > this.moveDelay) {
+    if (this.timeSinceLastMove > this.MOVE_DELAY) {
       this.timeSinceLastMove = 0;
       this.direction = this.nextDirection;
       this.grow();
       this.updatePosition();
       this.updateTail();
+      this.sendSnakeDataToServer();
     }
   }
 
@@ -95,17 +106,47 @@ class SnakePlayer extends BaseObject {
   }
 
   /** Add one element to player snake tail */
-  public grow(): void {
+  public grow(x?: number, y?: number): void {
     const snakeTail = new SnakeTail(
-      this.x,
-      this.y,
+      x ?? this.x,
+      y ?? this.y,
       this.width,
       this.height,
       this.color,
+      this.tailColor,
       this.ctx,
     );
 
     this.tail.push(snakeTail);
+  }
+
+  public sendSnakeDataToServer(): void {
+    const data: SnakeData = {
+      id: this.connectionStore.clientId,
+      head: {
+        x: this.x,
+        y: this.y,
+      },
+      tail: [],
+    };
+
+    for (const tailElement of this.tail) {
+      data.tail.push({ x: tailElement.x, y: tailElement.y });
+    }
+
+    this.gameStore.sendSnakeData(data);
+  }
+
+  public updateSnakeData(data: SnakeData) {
+    // Update head
+    this.x = data.head.x;
+    this.y = data.head.y;
+
+    // Update tail
+    this.tail.splice(0, this.tail.length);
+    data.tail.forEach((tailElement) => {
+      this.grow(tailElement.x, tailElement.y);
+    });
   }
 }
 

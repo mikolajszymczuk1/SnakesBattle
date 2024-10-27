@@ -1,13 +1,15 @@
 import SnakePlayer from '@/mod/gameObjects/SnakePlayer';
+import { useGameStore } from '@/stores/gameStore';
 
 class GameMain {
-  private gameWidth: number;
-  private gameHeight: number;
-  private cellSize: number;
-  private ctx: CanvasRenderingContext2D;
+  private readonly gameWidth: number;
+  private readonly gameHeight: number;
+  private readonly cellSize: number;
+  private readonly ctx: CanvasRenderingContext2D;
   private player: SnakePlayer | null = null;
   private lastTime: number;
   private keys: { [key: string]: boolean } = {};
+  private readonly gameStore;
 
   constructor(
     gameWidth: number,
@@ -20,7 +22,12 @@ class GameMain {
     this.cellSize = cellSize;
     this.ctx = ctx;
     this.lastTime = 0;
+    this.gameStore = useGameStore();
     this.addListeners();
+  }
+
+  public setPlayer(player: SnakePlayer) {
+    this.player = player;
   }
 
   /** Add some events listeners */
@@ -61,7 +68,9 @@ class GameMain {
   /** Render game elements */
   public render(): void {
     this.drawGrid();
-    this.player!.draw();
+    this.gameStore.playersMap.forEach((player) => {
+      player.draw();
+    });
   }
 
   /**
@@ -75,9 +84,9 @@ class GameMain {
       this.cellSize,
       this.cellSize,
       '#6a19ff',
+      '#500ec9',
       this.ctx,
     );
-    this.player = sp;
     return sp;
   }
 

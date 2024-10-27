@@ -1,10 +1,66 @@
-import { ref, type Ref } from 'vue';
+import { ref, type Ref, reactive, type Reactive } from 'vue';
 import { defineStore } from 'pinia';
 import { socket } from '@/utils/socketClient/socket';
+import GameMain from '@/mod/GameMain';
+import SnakePlayer from '@/mod/gameObjects/SnakePlayer';
+import { useConnectionStore } from '@/stores/connectionStore';
+import type { SnakeData } from '@/types/commonTypes';
 
 export const useGameStore = defineStore('gameStore', () => {
-  /** Bind all socket events */
-  const bindEvents = (): void => {};
+  const gameInstance: Ref<GameMain | null> = ref(null);
+  const playersMap: Reactive<Map<string, SnakePlayer>> = reactive(
+    new Map<string, SnakePlayer>(),
+  );
 
-  return { bindEvents };
+  /** Bind all socket events */
+  const bindEvents = (): void => {
+    socket.on('player:updatePlayerList', (players): void => {
+      const mapFromServer: Map<string, SnakeData> = new Map(players);
+
+      // Before update player list, remove old players
+      for (const [id, player] of playersMap) {
+        if (!mapFromServer.has(id)) {
+          playersMap.delete(id);
+        }
+      }
+
+      // Update exiting players or prepare new objects
+      for (const [id, data] of mapFromServer) {
+        if (playersMap.has(id)) {
+          playersMap.get(id)!.updateSnakeData(data);
+        } else {
+          playersMap.set(id, gameInstance.value!.createPlayer());
+        }
+      }
+    });
+
+    socket.on('player:run', (): void => {
+      const connectionStore = useConnectionStore();
+      gameInstance.value?.setPlayer(
+        playersMap.get(connectionStore.clientId) as SnakePlayer,
+      );
+      gameInstance.value?.runGameLoop();
+    });
+
+    socket.on('player:updateData', (data): void => {
+      if (playersMap.has(data.id)) {
+        playersMap.get(data.id)!.updateSnakeData(data);
+      }
+    });
+
+    socket.on('player:removePlayer', (id: string): void => {
+      playersMap.delete(id);
+    });
+  };
+
+  const sendSnakeData = (data: any): void => {
+    socket.emit('player:data', data);
+  };
+
+  return {
+    gameInstance,
+    playersMap,
+    bindEvents,
+    sendSnakeData,
+  };
 });

@@ -6,6 +6,7 @@ class BaseObject implements IBaseObject {
   width: number;
   height: number;
   color: string;
+  tailColor: string;
   ctx: CanvasRenderingContext2D;
 
   constructor(
@@ -14,6 +15,7 @@ class BaseObject implements IBaseObject {
     width: number,
     height: number,
     color: string,
+    tailColor: string,
     ctx: CanvasRenderingContext2D,
   ) {
     this.x = x;
@@ -21,6 +23,7 @@ class BaseObject implements IBaseObject {
     this.width = width;
     this.height = height;
     this.color = color;
+    this.tailColor = tailColor;
     this.ctx = ctx;
   }
 
@@ -41,8 +44,8 @@ class BaseObject implements IBaseObject {
   }
 
   /** Draw object */
-  draw(): void {
-    this.ctx.fillStyle = this.color;
+  draw(isTail: boolean = false): void {
+    this.ctx.fillStyle = isTail ? this.tailColor : this.color;
     this.ctx.fillRect(this.xPos, this.yPos, this.width, this.height);
   }
 }
