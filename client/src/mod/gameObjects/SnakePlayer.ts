@@ -5,14 +5,14 @@ import { useConnectionStore } from '@/stores/connectionStore';
 import type { SnakeData } from '@/types/commonTypes';
 
 class SnakePlayer extends BaseObject {
-  private readonly MOVE_DELAY: number = 0.1;
+  private readonly MOVE_DELAY: number = 0.08;
 
   private direction: string;
   private nextDirection: string;
   private timeSinceLastMove: number = 0;
 
   private readonly tail: SnakeTail[] = [];
-  private snakeLength: number = 5;
+  private snakeLength: number = 3;
 
   private readonly gameStore;
   private readonly connectionStore;
@@ -90,6 +90,22 @@ class SnakePlayer extends BaseObject {
       case 'right':
         this.x += 1;
         break;
+    }
+
+    if (this.xPos > 1400) {
+      this.x = 0;
+    }
+
+    if (this.yPos > 800) {
+      this.y = 0;
+    }
+
+    if (this.xPos < 0) {
+      this.x = 70;
+    }
+
+    if (this.yPos < 0) {
+      this.y = 40;
     }
   }
 

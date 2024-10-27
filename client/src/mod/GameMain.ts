@@ -1,5 +1,7 @@
 import SnakePlayer from '@/mod/gameObjects/SnakePlayer';
 import { useGameStore } from '@/stores/gameStore';
+import type { Position } from '@/types/commonTypes';
+import Apple from '@/mod/gameObjects/Apple';
 
 class GameMain {
   private readonly gameWidth: number;
@@ -10,6 +12,7 @@ class GameMain {
   private lastTime: number;
   private keys: { [key: string]: boolean } = {};
   private readonly gameStore;
+  private readonly apple: Apple;
 
   constructor(
     gameWidth: number,
@@ -24,6 +27,15 @@ class GameMain {
     this.lastTime = 0;
     this.gameStore = useGameStore();
     this.addListeners();
+    this.apple = new Apple(
+      0,
+      0,
+      this.cellSize,
+      this.cellSize,
+      '#ff0000',
+      '#ffffff',
+      ctx,
+    );
   }
 
   public setPlayer(player: SnakePlayer) {
@@ -68,6 +80,7 @@ class GameMain {
   /** Render game elements */
   public render(): void {
     this.drawGrid();
+    this.apple.draw();
     this.gameStore.playersMap.forEach((player) => {
       player.draw();
     });
@@ -107,11 +120,24 @@ class GameMain {
     // Update objects
     this.update(deltaTime);
 
-    // Dr objects
+    // Draw objects
     this.render();
 
     requestAnimationFrame(this.gameLoop);
   };
+
+  /**
+   * Update apple position
+   * @param {number} position new apple position
+   */
+  public updateApplePosition(position: Position): void {
+    this.apple.setX(position.x);
+    this.apple.setY(position.y);
+  }
+
+  public growSnake(): void {
+    this.player!.increaseLength();
+  }
 }
 
 export default GameMain;

@@ -1,5 +1,10 @@
+export type Position = {
+  x: number;
+  y: number;
+};
+
 export type SnakeData = {
   id: string;
-  head: { x: number; y: number };
-  tail: { x: number; y: number }[];
+  head: Position;
+  tail: Position[];
 };

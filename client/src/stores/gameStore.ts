@@ -4,7 +4,7 @@ import { socket } from '@/utils/socketClient/socket';
 import GameMain from '@/mod/GameMain';
 import SnakePlayer from '@/mod/gameObjects/SnakePlayer';
 import { useConnectionStore } from '@/stores/connectionStore';
-import type { SnakeData } from '@/types/commonTypes';
+import type { Position, SnakeData } from '@/types/commonTypes';
 
 export const useGameStore = defineStore('gameStore', () => {
   const gameInstance: Ref<GameMain | null> = ref(null);
@@ -42,7 +42,7 @@ export const useGameStore = defineStore('gameStore', () => {
       gameInstance.value?.runGameLoop();
     });
 
-    socket.on('player:updateData', (data): void => {
+    socket.on('player:updateData', (data: SnakeData): void => {
       if (playersMap.has(data.id)) {
         playersMap.get(data.id)!.updateSnakeData(data);
       }
@@ -51,9 +51,17 @@ export const useGameStore = defineStore('gameStore', () => {
     socket.on('player:removePlayer', (id: string): void => {
       playersMap.delete(id);
     });
+
+    socket.on('player:grow', (): void => {
+      gameInstance.value!.growSnake();
+    });
+
+    socket.on('game:updateApplePosition', (position: Position): void => {
+      gameInstance.value!.updateApplePosition(position);
+    });
   };
 
-  const sendSnakeData = (data: any): void => {
+  const sendSnakeData = (data: SnakeData): void => {
     socket.emit('player:data', data);
   };
 
