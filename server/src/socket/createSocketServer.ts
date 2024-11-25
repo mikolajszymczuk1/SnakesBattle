@@ -24,6 +24,8 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
     { headColor: '#F1C40F', tailColor: '#C19E0C' },
   ];
 
+  const maxPlayers: number = 5;
+
   const playersMap: Map<string, SnakeData> = new Map<string, SnakeData>();
   const filteredColors: SnakeColor[] = snakeColors.filter((snakeColor) => {
     for (const player of playersMap.values()) {
@@ -96,6 +98,10 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
   };
 
   io.on('connection', (socket): void => {
+    if (playersMap.size >= maxPlayers) {
+      return;
+    }
+
     console.log(`User connected: ${socket.id}`);
     socket.emit('client:connect', socket.id);
     const selectedColor = filteredColors[Math.floor(Math.random() * snakeColors.length)];

@@ -1,4 +1,4 @@
-import { ref, type Ref, reactive, type Reactive } from 'vue';
+import { ref, type Ref, reactive, type Reactive, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { socket } from '@/utils/socketClient/socket';
 import GameMain from '@/mod/GameMain';
@@ -12,6 +12,11 @@ export const useGameStore = defineStore('gameStore', () => {
   const playersMap: Reactive<Map<string, SnakePlayer>> = reactive(
     new Map<string, SnakePlayer>(),
   );
+  const numberOfPlayers: Ref<number> = ref(0);
+
+  watch(playersMap, () => {
+    numberOfPlayers.value = playersMap.size;
+  });
 
   /** Bind all socket events */
   const bindEvents = (): void => {
@@ -81,6 +86,7 @@ export const useGameStore = defineStore('gameStore', () => {
   return {
     gameInstance,
     playersMap,
+    numberOfPlayers,
     bindEvents,
     sendSnakeData,
   };

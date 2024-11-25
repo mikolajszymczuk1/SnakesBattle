@@ -1,8 +1,15 @@
 <template>
   <div class="gameBoard">
-    <h1 class="gameBoard__clientId">
-      Client id: {{ connectionStore.clientId }}
-    </h1>
+    <div class="gameBoard__topInfoPanel">
+      <div class="gameBoard__clientId">
+        Client id: {{ connectionStore.clientId }}
+      </div>
+      <div class="gameBoard__numberOfPlayers">
+        Players:
+        {{ gameStore.numberOfPlayers }}
+        / 5
+      </div>
+    </div>
     <canvas
       ref="gameBoardRef"
       id="mainGameBoard"
@@ -62,21 +69,35 @@ onMounted((): void => {
 
   width: 100%;
   height: 100vh;
+  padding: 25px;
 
   background-color: #121212;
 
-  &__clientId {
+  &__topInfoPanel {
+    display: flex;
+    justify-content: space-between;
     position: absolute;
-    top: 25px;
+    top: 40px;
 
+    width: calc(100% - 50px);
+    max-width: 1400px;
+  }
+
+  &__clientId,
+  &__numberOfPlayers {
     font-family: $roboto;
     font-weight: medium;
-    font-size: 1.5rem;
     color: white;
+    font-size: 1.2rem;
   }
 
   &__canvas {
     display: block;
+
+    width: 100%;
+    height: auto;
+    max-width: 1400px;
+    max-height: 800px;
 
     border: solid 1px rgba(white, 0.1);
   }
