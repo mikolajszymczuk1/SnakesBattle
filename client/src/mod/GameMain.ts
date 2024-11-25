@@ -78,16 +78,21 @@ class GameMain {
 
   /**
    * Fabric method to crate new player
+   * @param {string} headColor head color value
+   * @param {string} tailColor tail color value
    * @returns {SnakePlayer} new player
    */
-  public createPlayer(): SnakePlayer {
+  public createPlayer(
+    headColor: string = '#6a19ff',
+    tailColor: string = '#500ec9',
+  ): SnakePlayer {
     const sp = new SnakePlayer(
       0,
       0,
       this.cellSize,
       this.cellSize,
-      '#6a19ff',
-      '#500ec9',
+      headColor,
+      tailColor,
       this.ctx,
     );
     return sp;

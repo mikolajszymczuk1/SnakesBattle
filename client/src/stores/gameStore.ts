@@ -25,12 +25,15 @@ export const useGameStore = defineStore('gameStore', () => {
         }
       }
 
-      // Update exiting players or prepare new objects
+      // Update existing players or prepare new objects
       for (const [id, data] of mapFromServer) {
         if (playersMap.has(id)) {
           playersMap.get(id)!.updateSnakeData(data);
         } else {
-          playersMap.set(id, gameInstance.value!.createPlayer());
+          playersMap.set(
+            id,
+            gameInstance.value!.createPlayer(data.headColor, data.tailColor),
+          );
         }
       }
     });

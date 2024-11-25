@@ -7,4 +7,6 @@ export type SnakeData = {
   id: string;
   head: Position;
   tail: Position[];
+  headColor?: string;
+  tailColor?: string;
 };

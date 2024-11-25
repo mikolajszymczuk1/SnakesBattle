@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import type { AppConfig } from '@/types/AppConfig';
-import type { Position, SnakeData } from '@/types/commonTypes';
+import type { Position, SnakeData, SnakeColor } from '@/types/commonTypes';
 import { generateApplesPositions } from '@/mod/utils/gameHelpers';
 import { getSnakeDataFromBinary, convertDataToBinary } from '@/mod/utils/binary/binaryTools';
 
@@ -10,14 +10,103 @@ import { getSnakeDataFromBinary, convertDataToBinary } from '@/mod/utils/binary/
  */
 export const createSocketServer = (expressServer: any, config: AppConfig) => {
   const io = new Server(expressServer, { cors: { origin: config.api.baseClientUrl } });
+
+  const snakeColors: SnakeColor[] = [
+    { headColor: '#FF5733', tailColor: '#CC4629' },
+    { headColor: '#33FF57', tailColor: '#29CC45' },
+    { headColor: '#3357FF', tailColor: '#2946CC' },
+    { headColor: '#FF33A1', tailColor: '#CC2981' },
+    { headColor: '#33FFF5', tailColor: '#29CCC5' },
+    { headColor: '#FFC300', tailColor: '#CC9C00' },
+    { headColor: '#E74C3C', tailColor: '#BA3E30' },
+    { headColor: '#9B59B6', tailColor: '#7C4792' },
+    { headColor: '#1ABC9C', tailColor: '#15967C' },
+    { headColor: '#F1C40F', tailColor: '#C19E0C' },
+  ];
+
   const playersMap: Map<string, SnakeData> = new Map<string, SnakeData>();
+  const filteredColors: SnakeColor[] = snakeColors.filter((snakeColor) => {
+    for (const player of playersMap.values()) {
+      if (player.headColor === snakeColor.headColor) {
+        return false;
+      }
+    }
+
+    return true;
+  });
   const applesPosition: Position[] = generateApplesPositions(3);
+
+  /** Send fresh player list to other players */
+  const updatePlayerList = () => {
+    io.emit('player:updatePlayerList', Array.from(playersMap.entries()));
+  };
+
+  /**
+   * Apple collision logic
+   * @param {SnakeData} data snake data
+   * @param {any} socket socket instance
+   */
+  const handleAppleCollision = (data: SnakeData, socket: any) => {
+    // Apple logic
+    applesPosition.forEach((applePosition: Position) => {
+      if (data.head.x === applePosition.x && data.head.y === applePosition.y) {
+        applePosition.x = Math.floor(Math.random() * 70);
+        applePosition.y = Math.floor(Math.random() * 40);
+        socket.emit('player:grow');
+        io.emit('game:updateApplesPositions', applesPosition);
+      }
+    });
+  };
+
+  /**
+   * Player collisions logic
+   * @param {SnakeData} data snake data
+   * @param {any} socket socket instance
+   */
+  const handlePlayerCollision = (data: SnakeData, socket: any) => {
+    // Collisions with own tail
+    if (
+      playersMap.has(data.id) &&
+      playersMap
+        .get(data.id)!
+        .tail.some((tailElement) => tailElement.x === data.head.x && tailElement.y === data.head.y)
+    ) {
+      playersMap.delete(data.id);
+      socket.emit('player:gameOver');
+      socket.emit('player:removePlayer', data.id);
+      updatePlayerList();
+      return true;
+    }
+
+    // Collision with other players
+    for (const [id, player] of playersMap) {
+      if (
+        id !== data.id &&
+        player.tail.some((tailElement) => tailElement.x === data.head.x && tailElement.y === data.head.y)
+      ) {
+        playersMap.delete(data.id);
+        socket.emit('player:gameOver');
+        socket.emit('player:removePlayer', data.id);
+        updatePlayerList();
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   io.on('connection', (socket): void => {
     console.log(`User connected: ${socket.id}`);
     socket.emit('client:connect', socket.id);
-    playersMap.set(socket.id, { id: socket.id, head: { x: 0, y: 0 }, tail: [] });
-    io.emit('player:updatePlayerList', Array.from(playersMap.entries()));
+    const selectedColor = filteredColors[Math.floor(Math.random() * snakeColors.length)];
+    playersMap.set(socket.id, {
+      id: socket.id,
+      head: { x: 0, y: 0 },
+      tail: [],
+      headColor: selectedColor.headColor,
+      tailColor: selectedColor.tailColor,
+    });
+    updatePlayerList();
     io.emit('game:updateApplesPositions', applesPosition);
     socket.emit('player:run');
 
@@ -25,52 +114,27 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
       console.log(`User disconnected: ${socket.id}`);
       playersMap.delete(socket.id);
       socket.emit('player:removePlayer', socket.id);
-      socket.broadcast.emit('player:updatePlayerList', Array.from(playersMap.entries()));
+      updatePlayerList();
     });
 
     socket.on('player:data', (buffer: Buffer): void => {
       const data: SnakeData = getSnakeDataFromBinary(buffer);
 
-      // Apple logic
-      applesPosition.forEach((applePosition: Position) => {
-        if (data.head.x === applePosition.x && data.head.y === applePosition.y) {
-          applePosition.x = Math.floor(Math.random() * 70);
-          applePosition.y = Math.floor(Math.random() * 40);
-          socket.emit('player:grow');
-          io.emit('game:updateApplesPositions', applesPosition);
-        }
-      });
+      handleAppleCollision(data, socket);
 
-      // Collisions with own tail
-      if (
-        playersMap.has(data.id) &&
-        playersMap
-          .get(data.id)!
-          .tail.some((tailElement) => tailElement.x === data.head.x && tailElement.y === data.head.y)
-      ) {
-        playersMap.delete(data.id);
-        socket.emit('player:gameOver');
-        socket.emit('player:removePlayer', data.id);
-        socket.broadcast.emit('player:updatePlayerList', Array.from(playersMap.entries()));
+      if (handlePlayerCollision(data, socket)) {
         return;
       }
 
-      // Collision with other players
-      for (const [id, player] of playersMap) {
-        if (
-          id !== data.id &&
-          player.tail.some((tailElement) => tailElement.x === data.head.x && tailElement.y === data.head.y)
-        ) {
-          playersMap.delete(data.id);
-          socket.emit('player:gameOver');
-          socket.emit('player:removePlayer', data.id);
-          socket.broadcast.emit('player:updatePlayerList', Array.from(playersMap.entries()));
-          return;
-        }
-      }
-
       if (playersMap.has(data.id)) {
-        playersMap.set(data.id, data);
+        playersMap.set(data.id, {
+          id: data.id,
+          head: data.head,
+          tail: data.tail,
+          headColor: playersMap.get(data.id)?.headColor,
+          tailColor: playersMap.get(data.id)?.tailColor,
+        });
+
         socket.broadcast.emit('player:updateData', convertDataToBinary(data));
       }
     });
