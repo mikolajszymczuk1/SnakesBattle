@@ -6,14 +6,17 @@ import type { SnakeData } from '@/types/commonTypes';
 import { convertDataToBinary } from '@/mod/binary/binaryTools';
 
 class SnakePlayer extends BaseObject {
-  private readonly MOVE_DELAY: number = 0.08;
-
   private direction: string;
   private nextDirection: string;
   private timeSinceLastMove: number = 0;
 
   private readonly tail: SnakeTail[] = [];
   private snakeLength: number = 3;
+  private moveDealy: number = 0.08;
+
+  private readonly speedBonusTime: number = 5;
+  private isSnakeSpeed: boolean = false;
+  private currentBonusTime: number = 0;
 
   private readonly gameStore;
   private readonly connectionStore;
@@ -34,6 +37,12 @@ class SnakePlayer extends BaseObject {
     this.connectionStore = useConnectionStore();
   }
 
+  public speedSnake(): void {
+    this.moveDealy = 0.04;
+    this.isSnakeSpeed = true;
+    this.currentBonusTime = 0;
+  }
+
   /** Draw object */
   public draw(): void {
     super.draw();
@@ -46,8 +55,17 @@ class SnakePlayer extends BaseObject {
   public update(deltaTime: number, keys: { [key: string]: boolean }): void {
     this.updateDriection(keys);
 
+    // Resolve bonuses times
+    this.currentBonusTime += deltaTime;
+    if (this.isSnakeSpeed && this.currentBonusTime > this.speedBonusTime) {
+      this.isSnakeSpeed = false;
+      this.currentBonusTime = 0;
+      this.moveDealy = 0.08;
+    }
+
+    // Main snake position and body updates
     this.timeSinceLastMove += deltaTime;
-    if (this.timeSinceLastMove > this.MOVE_DELAY) {
+    if (this.timeSinceLastMove > this.moveDealy) {
       this.timeSinceLastMove = 0;
       this.direction = this.nextDirection;
       this.grow();
@@ -111,8 +129,8 @@ class SnakePlayer extends BaseObject {
   }
 
   /** Change snake size */
-  public increaseLength(): void {
-    this.snakeLength++;
+  public increaseLength(count: number = 1): void {
+    this.snakeLength += count;
   }
 
   /** Update tail (tail movement logic) */

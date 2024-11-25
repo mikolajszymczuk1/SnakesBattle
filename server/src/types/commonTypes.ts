@@ -15,3 +15,8 @@ export type SnakeColor = {
   headColor: string;
   tailColor: string;
 };
+
+export type AppleData = {
+  appleType: string;
+  position: Position;
+};

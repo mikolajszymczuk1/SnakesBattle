@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import type { AppConfig } from '@/types/AppConfig';
-import type { Position, SnakeData, SnakeColor } from '@/types/commonTypes';
+import type { SnakeData, SnakeColor, AppleData } from '@/types/commonTypes';
 import { generateApplesPositions } from '@/mod/utils/gameHelpers';
 import { getSnakeDataFromBinary, convertDataToBinary } from '@/mod/utils/binary/binaryTools';
 
@@ -36,7 +36,7 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
 
     return true;
   });
-  const applesPosition: Position[] = generateApplesPositions(3);
+  const applesPosition: AppleData[] = generateApplesPositions(3);
 
   /** Send fresh player list to other players */
   const updatePlayerList = () => {
@@ -50,11 +50,28 @@ export const createSocketServer = (expressServer: any, config: AppConfig) => {
    */
   const handleAppleCollision = (data: SnakeData, socket: any) => {
     // Apple logic
-    applesPosition.forEach((applePosition: Position) => {
-      if (data.head.x === applePosition.x && data.head.y === applePosition.y) {
-        applePosition.x = Math.floor(Math.random() * 70);
-        applePosition.y = Math.floor(Math.random() * 40);
-        socket.emit('player:grow');
+    applesPosition.forEach((applePosition: AppleData) => {
+      if (data.head.x === applePosition.position.x && data.head.y === applePosition.position.y) {
+        switch (applePosition.appleType) {
+          case 'basic':
+            socket.emit('player:grow');
+            break;
+          case 'bonus':
+            socket.emit('player:grow:bonus');
+            break;
+          case 'speed':
+            socket.emit('player:grow:speed');
+            break;
+          default:
+            socket.emit('player:grow');
+        }
+
+        applePosition.position.x = Math.floor(Math.random() * 70);
+        applePosition.position.y = Math.floor(Math.random() * 40);
+
+        const appleTypes = ['basic', 'basic', 'basic', 'basic', 'bonus', 'bonus', 'speed'];
+        applePosition.appleType = appleTypes[Math.floor(Math.random() * appleTypes.length)];
+
         io.emit('game:updateApplesPositions', applesPosition);
       }
     });

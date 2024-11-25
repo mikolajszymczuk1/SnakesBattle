@@ -10,3 +10,8 @@ export type SnakeData = {
   headColor?: string;
   tailColor?: string;
 };
+
+export type AppleData = {
+  appleType: string;
+  position: Position;
+};

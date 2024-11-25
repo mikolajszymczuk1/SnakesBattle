@@ -1,6 +1,6 @@
 import SnakePlayer from '@/mod/gameObjects/SnakePlayer';
 import { useGameStore } from '@/stores/gameStore';
-import type { Position } from '@/types/commonTypes';
+import type { AppleData } from '@/types/commonTypes';
 import Apple from '@/mod/gameObjects/Apple';
 
 class GameMain {
@@ -32,6 +32,10 @@ class GameMain {
 
   public setPlayer(player: SnakePlayer) {
     this.player = player;
+  }
+
+  public getPlayer(): SnakePlayer {
+    return this.player!;
   }
 
   /** Add some events listeners */
@@ -143,17 +147,32 @@ class GameMain {
 
   /**
    * Update apple position
-   * @param {Position[]} positions new apples positions
+   * @param {AppleData[]} positions new apples positions
    */
-  public updateApplesPosition(positions: Position[]): void {
+  public updateApplesPosition(positions: AppleData[]): void {
     for (let i = 0; i < positions.length; i++) {
-      this.apples[i].setX(positions[i].x);
-      this.apples[i].setY(positions[i].y);
+      this.apples[i].setX(positions[i].position.x);
+      this.apples[i].setY(positions[i].position.y);
+
+      switch (positions[i].appleType) {
+        case 'basic':
+          this.apples[i].color = '#ff0000';
+          break;
+        case 'bonus':
+          this.apples[i].color = '#ffffff';
+          break;
+        case 'speed':
+          this.apples[i].color = '#ff00d9';
+          break;
+        default:
+          this.apples[i].color = '#ff0000';
+          break;
+      }
     }
   }
 
-  public growSnake(): void {
-    this.player!.increaseLength();
+  public growSnake(count: number = 1): void {
+    this.player!.increaseLength(count);
   }
 }
 

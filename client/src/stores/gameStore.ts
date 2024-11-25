@@ -4,7 +4,7 @@ import { socket } from '@/utils/socketClient/socket';
 import GameMain from '@/mod/GameMain';
 import SnakePlayer from '@/mod/gameObjects/SnakePlayer';
 import { useConnectionStore } from '@/stores/connectionStore';
-import type { Position, SnakeData } from '@/types/commonTypes';
+import type { AppleData, SnakeData } from '@/types/commonTypes';
 import { getSnakeDataFromBinary } from '@/mod/binary/binaryTools';
 
 export const useGameStore = defineStore('gameStore', () => {
@@ -66,11 +66,19 @@ export const useGameStore = defineStore('gameStore', () => {
       gameInstance.value!.growSnake();
     });
 
+    socket.on('player:grow:bonus', (): void => {
+      gameInstance.value!.growSnake(5);
+    });
+
+    socket.on('player:grow:speed', (): void => {
+      gameInstance.value!.getPlayer().speedSnake();
+    });
+
     socket.on('player:gameOver', (): void => {
       console.log('Game Over !');
     });
 
-    socket.on('game:updateApplesPositions', (positions: Position[]): void => {
+    socket.on('game:updateApplesPositions', (positions: AppleData[]): void => {
       gameInstance.value!.updateApplesPosition(positions);
     });
   };
