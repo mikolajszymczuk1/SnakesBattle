@@ -1,6 +1,6 @@
 {
   "name": "snakes-battle-service",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Backend service for snakes battle game",
   "main": "src/server.ts",
   "scripts": {
