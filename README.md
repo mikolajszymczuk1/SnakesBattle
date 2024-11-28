@@ -1,5 +1,9 @@
 # Snakes Battle Game
 
+## Current state of game (Gameplay preview)
+
+![](./extra/simplePreview.gif)
+
 ## Development
 
 ### [1] Install all dependencies
